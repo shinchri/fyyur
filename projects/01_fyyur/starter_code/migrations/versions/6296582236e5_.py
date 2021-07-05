@@ -35,7 +35,6 @@ def downgrade():
     op.drop_column('venue', 'seeking_description')
     op.drop_column('venue', 'seeking_talent')
     op.drop_column('venue', 'website_link')
-    op.drop_column('show', 'show_id')
     op.drop_column('artist', 'seeking_description')
     op.drop_column('artist', 'seeking_venue')
     op.drop_column('artist', 'website_link')
