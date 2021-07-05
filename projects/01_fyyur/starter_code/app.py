@@ -123,7 +123,20 @@ def venues():
     area_dic = {}
     area_dic['city'] = area[0]
     area_dic['state'] = area[1]
-    area_dic['venues'] = venues = Venue.query.filter_by(city=area[0]).filter_by(state=area[1]).all()
+    area_dic['venues'] = []
+    for venue_data in Venue.query.filter_by(city=area[0]).filter_by(state=area[1]).all():
+      
+      upcoming_shows = db.session.query(Artist, Show).join(Show).join(Venue).filter(
+        Show.venue_id == venue_data.id,
+        Show.artist_id == Artist.id,
+        Show.start_time > datetime.today()
+      ).all()
+      venues_data = {
+        'id': venue_data.id,
+        'name': venue_data.name,
+        'num_upcoming_shows': len(upcoming_shows)
+      }
+      area_dic['venues'].append(venues_data)
     datas.append(area_dic)
     
 
@@ -620,7 +633,19 @@ def shows():
   # displays list of shows at /shows
   # TODO: replace with real venues data.
   #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
+  
+  shows = db.session.query(Show).order_by(Show.start_time).all()
+
+  data = [{
+    "venue_id": show.venues.id,
+    "venue_name": show.venues.name,
+    "artist_id": show.artists.id,
+    "artist_name": show.artists.name,
+    "artist_image_link": show.artists.image_link,
+    "start_time": show.start_time.strftime("%Y-%m-%d %H:%M:%S.%f")
+  } for show in shows]
+  
+  data_0=[{
     "venue_id": 1,
     "venue_name": "The Musical Hop",
     "artist_id": 4,
