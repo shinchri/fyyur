@@ -5,7 +5,7 @@
 import json
 import dateutil.parser
 import babel
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, abort
 from flask_moment import Moment
 from flask_sqlalchemy import SQLAlchemy
 import logging
@@ -14,6 +14,7 @@ from flask_wtf import Form
 from forms import *
 from flask_migrate import Migrate
 from datetime import datetime
+import sys
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -87,9 +88,8 @@ def venues():
       }
       area_dic['venues'].append(venues_data)
     datas.append(area_dic)
-    
 
-  return render_template('pages/venues.html', areas=datas);
+  return render_template('pages/venues.html', areas=datas)
 
 @app.route('/venues/search', methods=['POST'])
 def search_venues():
@@ -216,6 +216,7 @@ def create_venue_submission():
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Venue ' + data.name + ' could not be listed.')
   # see: http://flask.pocoo.org/docs/1.0/patterns/flashing/
+
   return render_template('pages/home.html')
 
 @app.route('/venues/<venue_id>', methods=['DELETE'])
@@ -338,7 +339,7 @@ def edit_venue(venue_id):
 
   venue = Venue.query.filter_by(id=venue_id).first_or_404()
   form = VenueForm(obj=venue)
-  
+
   # TODO: populate form with values from venue with ID <venue_id>
   return render_template('forms/edit_venue.html', form=form, venue=venue)
 
@@ -346,7 +347,38 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
   # TODO: take values from the form submitted, and update existing
   # venue record with ID <venue_id> using the new attributes
-  return redirect(url_for('show_venue', venue_id=venue_id))
+
+  error = False
+
+  try:
+    venue = Venue.query.first_or_404(venue_id)
+    form = VenueForm(request.form)
+    
+    venue.name = form.name.data
+    venue.city = form.city.data
+    venue.state = form.state.data
+    venue.address = form.address.data
+    venue.phone = form.phone.data
+    venue.image_link = form.image_link.data
+    venue.facebook_link = form.facebook_link.data
+    venue.website_link = form.website_link.data
+    venue.seeking_talent = form.seeking_talent.data
+    venue.seeking_description = form.seeking_description.data
+    venue.genres = form.genres.data
+    
+    db.session.commit()
+  except:
+    error = True
+    db.session.rollback()
+  finally:
+    db.session.close()
+
+  if not error:
+    return redirect(url_for('show_venue', venue_id=venue_id))
+  else:
+    flash("An error occurred. Venue was not updated.")
+    #print(sys.exc_info())
+    return render_template('pages/home.html')
 
 #  Create Artist
 #  ----------------------------------------------------------------
