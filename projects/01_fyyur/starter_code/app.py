@@ -76,6 +76,7 @@ def venues():
     area_dic['venues'] = []
     for venue_data in Venue.query.filter_by(city=area[0]).filter_by(state=area[1]).all():
       
+      # use join to get both artist and show data
       upcoming_shows = db.session.query(Artist, Show).join(Show).join(Venue).filter(
         Show.venue_id == venue_data.id,
         Show.artist_id == Artist.id,
